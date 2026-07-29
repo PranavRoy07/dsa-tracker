@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DSA Pattern Tracker — Interview Clock</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0b0e11;
+    --panel:#12161b;
+    --panel-2:#171c22;
+    --line:#232a33;
+    --text:#dbe2ea;
+    --muted:#7d8a9a;
+    --accent:#5fd3a3;      /* pass / go */
+    --accent-dim:#2f6e57;
+    --amber:#e8b34a;       /* warning / mid clock */
+    --red:#f0645a;         /* over-clock */
+    --mono:'JetBrains Mono', monospace;
+    --sans:'IBM Plex Sans', sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:
+      radial-gradient(circle at 15% 0%, rgba(95,211,163,0.06), transparent 40%),
+      var(--bg);
+    color:var(--text);
+    font-family:var(--sans);
+    line-height:1.5;
+  }
+  .wrap{max-width:980px;margin:0 auto;padding:40px 24px 100px;}
+
+  header{
+    display:flex;justify-content:space-between;align-items:flex-end;
+    gap:24px;flex-wrap:wrap;
+    border-bottom:1px solid var(--line);
+    padding-bottom:24px;margin-bottom:32px;
+  }
+  .eyebrow{
+    font-family:var(--mono);font-size:12px;letter-spacing:0.14em;
+    text-transform:uppercase;color:var(--accent);margin-bottom:8px;
+  }
+  h1{
+    font-family:var(--mono);font-weight:800;font-size:28px;margin:0;
+    color:var(--text);letter-spacing:-0.01em;
+  }
+  h1 span{color:var(--muted);font-weight:400;}
+  .progress-chip{
+    font-family:var(--mono);font-size:13px;color:var(--muted);
+    background:var(--panel);border:1px solid var(--line);
+    padding:10px 16px;border-radius:8px;white-space:nowrap;
+  }
+  .progress-chip b{color:var(--accent);font-size:16px;}
+
+  .progress-bar{height:6px;background:var(--panel);border-radius:4px;overflow:hidden;margin-bottom:40px;border:1px solid var(--line);}
+  .progress-fill{height:100%;background:linear-gradient(90deg,var(--accent-dim),var(--accent));width:0%;transition:width .4s ease;}
+
+  /* Signature element: the interview clock */
+  .clock-card{
+    background:var(--panel);border:1px solid var(--line);border-radius:12px;
+    padding:28px 28px 24px;margin-bottom:44px;
+    display:grid;grid-template-columns:1fr auto;gap:24px;align-items:center;
+  }
+  .clock-copy .eyebrow{margin-bottom:6px;}
+  .clock-copy h2{font-family:var(--mono);font-size:17px;margin:0 0 8px;}
+  .clock-copy p{color:var(--muted);font-size:14px;margin:0;max-width:52ch;}
+  .clock-face{
+    font-family:var(--mono);font-weight:800;font-size:44px;
+    color:var(--accent);min-width:150px;text-align:right;
+    font-variant-numeric:tabular-nums;
+  }
+  .clock-face.warn{color:var(--amber);}
+  .clock-face.over{color:var(--red);}
+  .clock-controls{display:flex;gap:8px;justify-content:flex-end;margin-top:10px;}
+  button{
+    font-family:var(--mono);font-size:12px;letter-spacing:0.04em;
+    background:var(--panel-2);color:var(--text);border:1px solid var(--line);
+    padding:8px 14px;border-radius:6px;cursor:pointer;transition:border-color .15s, color .15s;
+  }
+  button:hover{border-color:var(--accent);color:var(--accent);}
+  .clock-status{font-family:var(--mono);font-size:11px;color:var(--muted);margin-top:6px;text-align:right;min-height:14px;}
+
+  .group{margin-bottom:28px;}
+  .group-head{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:12px 4px;cursor:pointer;user-select:none;
+  }
+  .group-head:hover .group-title{color:var(--accent);}
+  .group-title{font-family:var(--mono);font-weight:700;font-size:15px;color:var(--text);transition:color .15s;}
+  .group-meta{font-family:var(--mono);font-size:12px;color:var(--muted);}
+  .problem-list{
+    background:var(--panel);border:1px solid var(--line);border-radius:10px;
+    overflow:hidden;
+  }
+  .problem{
+    display:flex;align-items:center;gap:14px;
+    padding:13px 18px;border-bottom:1px solid var(--line);
+    font-size:14px;
+  }
+  .problem:last-child{border-bottom:none;}
+  .problem input[type=checkbox]{
+    width:17px;height:17px;accent-color:var(--accent);cursor:pointer;flex-shrink:0;
+  }
+  .problem label{flex:1;cursor:pointer;}
+  .problem.done label{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--accent-dim);}
+  .tag{
+    font-family:var(--mono);font-size:10.5px;padding:3px 8px;border-radius:999px;
+    border:1px solid var(--line);color:var(--muted);white-space:nowrap;
+  }
+  .tag.easy{color:var(--accent);border-color:var(--accent-dim);}
+  .tag.medium{color:var(--amber);border-color:#6b551f;}
+  .tag.hard{color:var(--red);border-color:#6b2a26;}
+
+  .patterns-note{
+    font-family:var(--mono);font-size:12px;color:var(--muted);
+    border-top:1px solid var(--line);margin-top:40px;padding-top:20px;
+  }
+  .patterns-note a{color:var(--accent);text-decoration:none;}
+
+  @media (max-width:640px){
+    .clock-card{grid-template-columns:1fr;text-align:left;}
+    .clock-face{text-align:left;font-size:36px;}
+    .clock-controls,.clock-status{justify-content:flex-start;text-align:left;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div>
+      <div class="eyebrow">TCS · Cognizant · Markytics — SDE Pipeline</div>
+      <h1>DSA Pattern Tracker <span>/ Phase 1</span></h1>
+    </div>
+    <div class="progress-chip"><b id="doneCount">0</b>/30 problems solved</div>
+  </header>
+
+  <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+
+  <div class="clock-card">
+    <div class="clock-copy">
+      <div class="eyebrow">Mentorship Challenge</div>
+      <h2>Rewrite from memory. Beat the CodeVita clock.</h2>
+      <p>Close the IDE. Open a blank file. Rewrite the optimal solution for a pattern you just finished — no notes. A working HashMap solution should take under 8 minutes. That's the bar.</p>
+    </div>
+    <div>
+      <div class="clock-face" id="clockFace">00:00</div>
+      <div class="clock-controls">
+        <button id="startBtn">Start</button>
+        <button id="resetBtn">Reset</button>
+      </div>
+      <div class="clock-status" id="clockStatus"></div>
+    </div>
+  </div>
+
+  <div id="groups"></div>
+
+  <div class="patterns-note">
+    Pattern definitions, recognition signals, and Java templates live in <a href="PATTERNS.md">PATTERNS.md</a>. Run <code>mvn test</code> to execute the JUnit 5 suite — this dashboard tracks progress only, it doesn't run the code.
+  </div>
+
+</div>
+
+<script>
+const DATA = [
+  { group: "Arrays — Two Pointer / Sliding Window / Kadane's / Prefix-Suffix", items: [
+    ["arr-1","Two Sum","easy"],
+    ["arr-2","Best Time to Buy and Sell Stock","easy"],
+    ["arr-3","Maximum Subarray","medium"],
+    ["arr-4","Trapping Rain Water","hard"],
+    ["arr-5","3Sum","medium"],
+    ["arr-6","Product of Array Except Self","medium"],
+    ["arr-7","Move Zeroes","easy"],
+    ["arr-8","Container With Most Water","medium"],
+    ["arr-9","Longest Substring Without Repeating Characters","medium"],
+    ["arr-10","Minimum Window Substring","hard"],
+  ]},
+  { group: "LinkedList + Trees — BFS / DFS / Floyd's / BST", items: [
+    ["ll-1","Reverse Linked List (iterative + recursive)","easy"],
+    ["ll-2","Linked List Cycle (Floyd's)","easy"],
+    ["tr-1","Lowest Common Ancestor of a BST","medium"],
+    ["tr-2","Binary Tree Level Order Traversal (BFS)","medium"],
+    ["tr-3","Validate Binary Search Tree","medium"],
+    ["tr-4","Diameter of Binary Tree","easy"],
+    ["tr-5","Path Sum","easy"],
+    ["tr-6","Invert Binary Tree","easy"],
+    ["tr-7","Symmetric Tree","easy"],
+    ["ll-3","Merge Two Sorted Lists","easy"],
+  ]},
+  { group: "Strings — HashMap / Stack", items: [
+    ["str-1","Valid Anagram","easy"],
+    ["str-2","Group Anagrams","medium"],
+    ["str-3","Longest Palindromic Substring","medium"],
+    ["str-4","Word Pattern","easy"],
+    ["str-5","First Unique Character in a String","easy"],
+    ["str-6","Decode String","medium"],
+    ["str-7","Roman to Integer","easy"],
+    ["str-8","Longest Common Prefix","easy"],
+    ["str-9","Isomorphic Strings","easy"],
+    ["str-10","StringBuilder Discipline (never concat in a loop)","easy"],
+  ]},
+];
+
+const STORAGE_KEY = "dsa-tracker-progress-v1";
+const state = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+
+function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+
+function render(){
+  const container = document.getElementById("groups");
+  container.innerHTML = "";
+  let totalDone = 0, totalCount = 0;
+
+  DATA.forEach((g, gi) => {
+    totalCount += g.items.length;
+    const groupDone = g.items.filter(([id]) => state[id]).length;
+    totalDone += groupDone;
+
+    const groupEl = document.createElement("div");
+    groupEl.className = "group";
+    groupEl.innerHTML = `
+      <div class="group-head">
+        <span class="group-title">${g.group}</span>
+        <span class="group-meta">${groupDone}/${g.items.length}</span>
+      </div>
+      <div class="problem-list">
+        ${g.items.map(([id, name, diff]) => `
+          <div class="problem ${state[id] ? "done" : ""}">
+            <input type="checkbox" id="${id}" ${state[id] ? "checked" : ""}>
+            <label for="${id}">${name}</label>
+            <span class="tag ${diff}">${diff}</span>
+          </div>
+        `).join("")}
+      </div>
+    `;
+    container.appendChild(groupEl);
+  });
+
+  document.getElementById("doneCount").textContent = totalDone;
+  document.getElementById("progressFill").style.width = (totalDone / totalCount * 100) + "%";
+
+  container.querySelectorAll('input[type=checkbox]').forEach(cb => {
+    cb.addEventListener("change", () => {
+      state[cb.id] = cb.checked;
+      save();
+      render();
+    });
+  });
+}
+render();
+
+// --- Interview clock (signature element) ---
+let seconds = 0, timerId = null;
+const face = document.getElementById("clockFace");
+const status = document.getElementById("clockStatus");
+const startBtn = document.getElementById("startBtn");
+const resetBtn = document.getElementById("resetBtn");
+
+function fmt(s){
+  const m = String(Math.floor(s/60)).padStart(2,"0");
+  const r = String(s%60).padStart(2,"0");
+  return `${m}:${r}`;
+}
+function tick(){
+  seconds++;
+  face.textContent = fmt(seconds);
+  face.className = "clock-face";
+  if (seconds >= 480){ face.classList.add("over"); status.textContent = "Over the 8-minute CodeVita clock — you haven't fully internalised this one yet."; }
+  else if (seconds >= 360){ face.classList.add("warn"); status.textContent = "Under 2 minutes left on the clock."; }
+  else { status.textContent = ""; }
+}
+startBtn.addEventListener("click", () => {
+  if (timerId){ clearInterval(timerId); timerId = null; startBtn.textContent = "Start"; return; }
+  timerId = setInterval(tick, 1000);
+  startBtn.textContent = "Pause";
+});
+resetBtn.addEventListener("click", () => {
+  clearInterval(timerId); timerId = null;
+  seconds = 0; face.textContent = "00:00"; face.className = "clock-face";
+  status.textContent = ""; startBtn.textContent = "Start";
+});
+</script>
+</body>
+</html>
